@@ -31,6 +31,8 @@
 	<set name="BUILD_DIR" value="export" />
 	<source path="source" />
 	<assets path="assets" embed="true" />
+	<assets path="changelog.txt" rename="changelog.txt" />
+	<assets path="readme.txt" rename="readme.txt" />
 
 	<!-- _______________________________ Libraries ______________________________ -->
 
@@ -40,7 +42,7 @@
 	<!--<haxelib name="flixel-addons" />-->
 
 	<!--In case you want to use the ui package-->
-	<!--<haxelib name="flixel-ui" />-->
+	<!-- <haxelib name="flixel-ui" /> -->
 
 	<!--In case you want to use nape with flixel-->
 	<!--<haxelib name="nape-haxe4" />-->

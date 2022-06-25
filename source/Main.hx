@@ -35,9 +35,17 @@ class PlayState extends FlxState
 	var untrialFile:FileReference;
 	var trialFile:FileReference;
 	var unlockArray = [[0xD0, 0x50], [0xF0, 0x70], [0xD1, 0x51], [0xC1, 0x41], [0xC8, 0x41]];
+	var overwriteFlp = true;
 
 	override public function create()
 	{
+		if (FlxG.save.data.overwrite == null)
+		{
+			FlxG.save.data.overwrite = true;
+			FlxG.save.flush();
+		}
+		else
+			overwriteFlp = FlxG.save.data.overwrite;
 		var bg = new FlxSprite().loadGraphic("assets/bg.png");
 		bg.screenCenter();
 		add(bg);
@@ -57,6 +65,21 @@ class PlayState extends FlxState
 			trialFile.browse([new FileFilter("FL Studio Project files (*.flp).", "flp")]); // start that file selecter B)
 		});
 		add(trial);
+		var overwriteText = new FlxText(50, 50, 0, "You are currently " + (overwriteFlp ? "" : "not ") + "in overwriting mode.", 20);
+		var overwriteButton = new FlxButton(50, 100, "Toggle overwriting mode.", function()
+		{
+			overwriteFlp = !overwriteFlp;
+			FlxG.save.data.overwrite = overwriteFlp;
+			overwriteText.text = "You are currently " + (overwriteFlp ? "" : "not ") + "in overwriting mode.";
+		});
+		overwriteButton.setGraphicSize(390, 75);
+		overwriteButton.label.scale.set(overwriteButton.scale.x - 2.25, overwriteButton.scale.y - 0.75);
+		overwriteButton.updateHitbox();
+		overwriteButton.label.updateHitbox();
+		overwriteButton.label.fieldWidth = 245;
+		overwriteButton.label.x += 120;
+		add(overwriteText);
+		add(overwriteButton);
 		var sizetoscale = 3.0;
 		var extraoffset = 30;
 		// ignore code below just trying to make it look good with bigger buttons
@@ -79,12 +102,14 @@ class PlayState extends FlxState
 	{
 		untrialFile.removeEventListener(Event.SELECT, null); // if them people cancel it / did it
 		untrialFile.removeEventListener(Event.CANCEL, null); // ^
+		untrialFile = null;
 	}
 
 	function ntf(e) // stands for no trial flp events
 	{
 		trialFile.removeEventListener(Event.SELECT, null); // if them people cancel it / did it
 		trialFile.removeEventListener(Event.CANCEL, null); // ^
+		trialFile = null;
 	}
 
 	function uflp(e) // untrial flp
@@ -121,7 +146,10 @@ class PlayState extends FlxState
 				}
 			}
 		}
-		sys.io.File.saveBytes(path, intArrayToBytes(flp)); // save it
+		var newpath = path;
+		if (!overwriteFlp) // one liner B)
+			newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("") + " - NON-TRIALED MODE" + ".flp";
+		sys.io.File.saveBytes(newpath, intArrayToBytes(flp)); // save it
 		yayyoudidit(); // display happy text :D
 		nuf(null);
 	}
@@ -183,7 +211,10 @@ class PlayState extends FlxState
 				}
 			}
 		}
-		sys.io.File.saveBytes(path, intArrayToBytes(flp)); // save it
+		var newpath = path;
+		if (!overwriteFlp) // one liner B)
+			newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("") + " - TRIAL MODE" + ".flp";
+		sys.io.File.saveBytes(newpath, intArrayToBytes(flp)); // save it
 		yayyoudidit(); // display da happy text :)
 		ntf(null);
 	}
