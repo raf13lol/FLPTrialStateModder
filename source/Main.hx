@@ -1,5 +1,6 @@
 package;
 
+import cpp.UInt16;
 import cpp.UInt8;
 import flixel.FlxG;
 import flixel.FlxGame;
@@ -26,15 +27,20 @@ class Main extends Sprite
 	public function new()
 	{
 		super();
+		#if (flixel >= "5.0.0")
+		addChild(new FlxGame(0, 0, PlayState, 60, 60, true));
+		#else
 		addChild(new FlxGame(0, 0, PlayState, 1, 60, 60, true));
+		#end
 	}
 }
 
 class PlayState extends FlxState
 {
-	var untrialFile:FileReference;
-	var trialFile:FileReference;
+	var flpFile:FileReference;
+	var untrial = true;
 	var unlockArray = [[0xD0, 0x50], [0xF0, 0x70], [0xD1, 0x51], [0xC1, 0x41], [0xC8, 0x41]];
+	var lockArray = [[0x50, 0xD0], [0x70, 0xF0], [0x51, 0xD1], [0x41, 0xC1], [0x41, 0xC8]];
 	var overwriteFlp = true;
 
 	override public function create()
@@ -49,20 +55,22 @@ class PlayState extends FlxState
 		var bg = new FlxSprite().loadGraphic("assets/bg.png");
 		bg.screenCenter();
 		add(bg);
-		var untrial = new FlxButton(0, 0, "Untrial-ize FLP", function()
+		var untrialbutton = new FlxButton(0, 0, "Untrial-ize FLP", function()
 		{
-			untrialFile = new FileReference(); // make it new and existing
-			untrialFile.addEventListener(Event.SELECT, uflp); // add if people confirm
-			untrialFile.addEventListener(Event.CANCEL, nuf); // add if people say nah
-			untrialFile.browse([new FileFilter("FL Studio Project files (*.flp).", "flp")]); // start that file selecter B)
+			untrial = true;
+			flpFile = new FileReference(); // make it new and existing
+			flpFile.addEventListener(Event.SELECT, flp); // add if people confirm
+			flpFile.addEventListener(Event.CANCEL, nomoreevents); // add if people say nah
+			flpFile.browse([new FileFilter("FL Studio Project files (*.flp).", "flp")]); // start that file selecter B)
 		});
-		add(untrial);
+		add(untrialbutton);
 		var trial = new FlxButton(0, 0, "Trial-ize FLP", function()
 		{
-			trialFile = new FileReference(); // make it new and existing
-			trialFile.addEventListener(Event.SELECT, tflp); // add if people confirm
-			trialFile.addEventListener(Event.CANCEL, ntf); // add if people say nah
-			trialFile.browse([new FileFilter("FL Studio Project files (*.flp).", "flp")]); // start that file selecter B)
+			untrial = false;
+			flpFile = new FileReference(); // make it new and existing
+			flpFile.addEventListener(Event.SELECT, flp); // add if people confirm
+			flpFile.addEventListener(Event.CANCEL, nomoreevents); // add if people say nah
+			flpFile.browse([new FileFilter("FL Studio Project files (*.flp).", "flp")]); // start that file selecter B)
 		});
 		add(trial);
 		var overwriteText = new FlxText(50, 50, 0, "You are currently " + (overwriteFlp ? "" : "not ") + "in overwriting mode.", 20);
@@ -83,12 +91,12 @@ class PlayState extends FlxState
 		var sizetoscale = 3.0;
 		var extraoffset = 30;
 		// ignore code below just trying to make it look good with bigger buttons
-		untrial.scale.set(sizetoscale, sizetoscale);
-		untrial.label.scale.set(sizetoscale, sizetoscale);
-		untrial.updateHitbox();
-		untrial.label.updateHitbox();
-		untrial.screenCenter();
-		untrial.x -= untrial.width + extraoffset;
+		untrialbutton.scale.set(sizetoscale, sizetoscale);
+		untrialbutton.label.scale.set(sizetoscale, sizetoscale);
+		untrialbutton.updateHitbox();
+		untrialbutton.label.updateHitbox();
+		untrialbutton.screenCenter();
+		untrialbutton.x -= untrialbutton.width + extraoffset;
 		trial.scale.set(sizetoscale, sizetoscale);
 		trial.label.scale.set(sizetoscale, sizetoscale);
 		trial.updateHitbox();
@@ -98,49 +106,67 @@ class PlayState extends FlxState
 		super.create();
 	}
 
-	function nuf(e) // stands for no untrial flp events
+	function nomoreevents(e) // stands for no untrial flp events
 	{
-		untrialFile.removeEventListener(Event.SELECT, null); // if them people cancel it / did it
-		untrialFile.removeEventListener(Event.CANCEL, null); // ^
-		untrialFile = null;
+		flpFile.removeEventListener(Event.SELECT, null); // if them people cancel it / did it
+		flpFile.removeEventListener(Event.CANCEL, null); // ^
+		flpFile = null;
 	}
 
-	function ntf(e) // stands for no trial flp events
+	function intToNullInt(int:UInt16):Null<UInt16>
 	{
-		trialFile.removeEventListener(Event.SELECT, null); // if them people cancel it / did it
-		trialFile.removeEventListener(Event.CANCEL, null); // ^
-		trialFile = null;
+		return int;
 	}
 
-	function uflp(e) // untrial flp
+	function flp(e)
 	{
 		@:privateAccess
-		var path = untrialFile.__path; // get that path
+		var path = flpFile.__path; // get that path
 		if (path == null || !sys.FileSystem.exists(path) || !path.endsWith(".flp"))
 		{
 			return;
 		} // check it aint broken
-		var flp = bytesToIntArray(sys.io.File.getBytes(path)); // yoink the bytes
-		for (i in 0...flp.length) // set trial header thing to 01
+		@:privateAccess
+		var flp = new haxe.io.Bytes(0, []); // so we can do the try catch
+		try
 		{
-			if (flp[i] == 0x1c)
+			flp = sys.io.File.getBytes(path); // yoink the bytes
+		}
+		catch (e)
+		{
+			trace("Ruh oh! Error happen! " + e);
+			return;
+		}
+		for (i in 0...50) // set trial header thing to 01
+		{
+			if (flp.getUInt16(i) == 0x1c)
 			{
-				flp[i + 1] = 0x01;
+				flp.setUInt16(i + 1, (untrial) ? 0x01 : 0x00);
 				break;
 			}
 		}
+		var fixyArray = unlockArray.copy();
+		if (!untrial)
+			fixyArray = lockArray.copy();
 		for (i in 0...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
 		{
-			if (flp[i] == 0x00 && flp[i + 1] != null && flp[i + 2] != null && flp[i + 3] != null && flp[i + 4] != null)
+			if (flp.getUInt16(i) == 0x00
+				&& intToNullInt(flp.getUInt16(i + 1)) != null
+				&& intToNullInt(flp.getUInt16(i + 2)) != null
+				&& intToNullInt(flp.getUInt16(i + 3)) != null
+				&& intToNullInt(flp.getUInt16(i + 4)) != null)
 			{
-				if (flp[i + 1] == 0x00 && flp[i + 2] == 0x00 && flp[i + 3] == 0xD4 && flp[i + 4] == 0x34)
+				if (flp.getUInt16(i + 1) == 0x00 && flp.getUInt16(i + 2) == 0x00 && flp.getUInt16(i + 3) == 0xD4 && flp.getUInt16(i + 4) == 0x34)
 				{
-					for (j in i...i + 25)
+					for (j in i + 4...i + 20)
 					{
-						for (k in 0...unlockArray.length)
+						for (k in 0...fixyArray.length)
 						{
-							if (flp[j] == unlockArray[k][0])
-								flp[j] = unlockArray[k][1];
+							if (flp.getUInt16(j) == fixyArray[k][0])
+							{
+								flp.setUInt16(j, fixyArray[k][1]);
+								break;
+							}
 						}
 					}
 				}
@@ -148,75 +174,13 @@ class PlayState extends FlxState
 		}
 		var newpath = path;
 		if (!overwriteFlp) // one liner B)
-			newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("") + " - NON-TRIALED MODE" + ".flp";
-		sys.io.File.saveBytes(newpath, intArrayToBytes(flp)); // save it
+			newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
+				+ " - "
+				+ ((untrial) ? "NON-" : "")
+				+ "TRIALED MODE.flp";
+		sys.io.File.saveBytes(newpath, flp); // save it
 		yayyoudidit(); // display happy text :D
-		nuf(null);
-	}
-
-	function bytesToIntArray(bytes:Bytes)
-	{
-		var array:Array<Null<cpp.UInt8>> = [];
-		for (i in 0...bytes.length)
-		{
-			@:privateAccess
-			array.push(bytes.b[i]);
-		}
-		return array;
-	}
-
-	function intArrayToBytes(array:Array<UInt8>)
-	{
-		@:privateAccess
-		var bytes:Bytes = new Bytes(array.length, []);
-		for (i in 0...array.length)
-		{
-			@:privateAccess
-			bytes.b[i] = array[i];
-		}
-		return bytes;
-	}
-
-	function tflp(e) // trial flp
-	{
-		@:privateAccess
-		var path = trialFile.__path; // get that path
-		if (path == null || !sys.FileSystem.exists(path) || !path.endsWith(".flp"))
-		{
-			return;
-		} // check it aint broken
-		var flp = bytesToIntArray(sys.io.File.getBytes(path)); // yoink the bytes
-		for (i in 0...flp.length) // set trial header thing to 01
-		{
-			if (flp[i] == 0x1c)
-			{
-				flp[i + 1] = 0x00;
-				break;
-			}
-		}
-		for (i in 0...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
-		{
-			if (flp[i] == 0x00 && flp[i + 1] != null && flp[i + 2] != null && flp[i + 3] != null && flp[i + 4] != null)
-			{
-				if (flp[i + 1] == 0x00 && flp[i + 2] == 0x00 && flp[i + 3] == 0xD4 && flp[i + 4] == 0x34)
-				{
-					for (j in i...i + 25)
-					{
-						for (k in 0...unlockArray.length)
-						{
-							if (flp[j] == unlockArray[k][1])
-								flp[j] = unlockArray[k][0];
-						}
-					}
-				}
-			}
-		}
-		var newpath = path;
-		if (!overwriteFlp) // one liner B)
-			newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("") + " - TRIAL MODE" + ".flp";
-		sys.io.File.saveBytes(newpath, intArrayToBytes(flp)); // save it
-		yayyoudidit(); // display da happy text :)
-		ntf(null);
+		nomoreevents(null);
 	}
 
 	function yayyoudidit()
