@@ -113,73 +113,57 @@ class PlayState extends FlxState
 		flpFile = null;
 	}
 
-	function intToNullInt(int:UInt16):Null<UInt16>
-	{
-		return int;
-	}
-
 	function flp(e)
 	{
 		@:privateAccess
-		var path = flpFile.__path; // get that path
-		if (path == null || !sys.FileSystem.exists(path) || !path.endsWith(".flp"))
 		{
-			return;
-		} // check it aint broken
-		@:privateAccess
-		var flp = new haxe.io.Bytes(0, []); // so we can do the try catch
-		try
-		{
-			flp = sys.io.File.getBytes(path); // yoink the bytes
-		}
-		catch (e)
-		{
-			trace("Ruh oh! Error happen! " + e);
-			return;
-		}
-		for (i in 0...50) // set trial header thing to 01
-		{
-			if (flp.getUInt16(i) == 0x1c)
+			var path = flpFile.__path; // get that path
+			if (path == null || !sys.FileSystem.exists(path) || !path.endsWith(".flp"))
 			{
-				flp.setUInt16(i + 1, (untrial) ? 0x01 : 0x00);
-				break;
-			}
-		}
-		var fixyArray = unlockArray.copy();
-		if (!untrial)
-			fixyArray = lockArray.copy();
-		for (i in 0...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
-		{
-			if (flp.getUInt16(i) == 0x00
-				&& intToNullInt(flp.getUInt16(i + 1)) != null
-				&& intToNullInt(flp.getUInt16(i + 2)) != null
-				&& intToNullInt(flp.getUInt16(i + 3)) != null
-				&& intToNullInt(flp.getUInt16(i + 4)) != null)
+				return;
+			} // check it aint broken
+			var flp = sys.io.File.getBytes(path); // yoink the bytes
+
+			for (i in 0...50) // set trial header thing to 01
 			{
-				if (flp.getUInt16(i + 1) == 0x00 && flp.getUInt16(i + 2) == 0x00 && flp.getUInt16(i + 3) == 0xD4 && flp.getUInt16(i + 4) == 0x34)
+				if (flp.b[i] == 0x1c)
 				{
-					for (j in i + 4...i + 20)
+					flp.b[i + 1] = ((untrial) ? 0x01 : 0x00);
+					break;
+				}
+			}
+			var fixyArray = unlockArray;
+			if (!untrial)
+				fixyArray = lockArray;
+			for (i in 0...flp.b.length) // detect 00 00 00 D4 34 and set the flag to correct value
+			{
+				if (flp.b[i] == 0x00 && flp.b[i + 1] == 0x00 && flp.b[i + 2] == 0x00 && flp.b[i + 3] == 0xD4 && flp.b[i + 4] == 0x34)
+				{
+					for (j in i...i + 25)
 					{
 						for (k in 0...fixyArray.length)
 						{
-							if (flp.getUInt16(j) == fixyArray[k][0])
+							if (flp.b[j] == fixyArray[k][0])
 							{
-								flp.setUInt16(j, fixyArray[k][1]);
+								flp.b[j] = fixyArray[k][1];
 							}
 						}
 					}
 				}
+
+				if (flp.b.length - i < 20)
+					break;
 			}
+			var newpath = path;
+			if (!overwriteFlp) // one liner B)
+				newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
+					+ " - "
+					+ ((untrial) ? "NON-" : "")
+					+ "TRIALED MODE.flp";
+			sys.io.File.saveBytes(newpath, flp); // save it
+			yayyoudidit(); // display happy text :D
+			nomoreevents(null);
 		}
-		var newpath = path;
-		if (!overwriteFlp) // one liner B)
-			newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
-				+ " - "
-				+ ((untrial) ? "NON-" : "")
-				+ "TRIALED MODE.flp";
-		sys.io.File.saveBytes(newpath, flp); // save it
-		yayyoudidit(); // display happy text :D
-		nomoreevents(null);
 	}
 
 	function yayyoudidit()
