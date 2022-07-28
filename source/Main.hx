@@ -165,7 +165,6 @@ class PlayState extends FlxState
 							if (flp.getUInt16(j) == fixyArray[k][0])
 							{
 								flp.setUInt16(j, fixyArray[k][1]);
-								break;
 							}
 						}
 					}
