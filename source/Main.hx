@@ -138,19 +138,11 @@ class PlayState extends FlxState
 			} // check it aint broken
 			var flp = sys.io.File.getBytes(path); // yoink the bytes
 
-			for (i in 0...100) // set trial header thing to 01
-			{
-				if (flp.b[i] == 0x1c)
-				{
-					flp.b[i + 1] = ((untrial) ? 0x01 : 0x00);
-					break;
-				}
-			}
 			var fixyArray = unlockArray;
 			if (!untrial)
 				fixyArray = lockArray;
 
-			for (i in 0...flp.b.length) // detect 00 00 00 D4 34 and set the flag to correct value
+			for (i in 0x30...flp.b.length) // detect 00 00 00 D4 34 and set the flag to correct value
 			{
 				if (flp.b[i] == 0x00 && flp.b[i + 1] == 0x00 && flp.b[i + 2] == 0x00 && flp.b[i + 3] == 0xD4 && flp.b[i + 4] == 0x34)
 				{
@@ -168,6 +160,16 @@ class PlayState extends FlxState
 
 				if (flp.b.length - i < 20)
 					break;
+			}
+			for (i in 0...0x30) // set trial header thing to 01
+			{
+				if (flp.b[i] == 0x1c)
+				{
+					if (untrial)
+					flp.b[i + 1] = 0x01;
+					else
+					flp.b[i + 1] = 0x00;
+				}
 			}
 			var newpath = path;
 			if (!overwriteFlp) // one liner B)

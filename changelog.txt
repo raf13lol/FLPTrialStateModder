@@ -1,3 +1,21 @@
+1.2.3:
+
+- patched an issue where 1C would appear earlier in a flp and the program attempted to use the untrial thing on it
+-- (fixed by just doing the process for all bytes matching 1C in the first 50 bytes or so)
+
+1.2.2:
+
+- new file header plugin header thing found (c0)
+
+1.2.1:
+
+- ok guys its fixed dw
+
+1.2.0:
+
+- made it faster
+- but it corrupts flps mb guys
+
 1.1.0:
 
 - added overwrite option
