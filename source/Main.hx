@@ -132,7 +132,7 @@ class PlayState extends FlxState
 		@:privateAccess
 		{
 			var path = flpFile.__path; // get that path
-			if (path == null || !sys.FileSystem.exists(path) || !path.endsWith(".flp"))
+			if (path == null || !sys.FileSystem.exists(path) || (!path.endsWith(".flp") && !path.endsWith(".fst"))
 			{
 				return;
 			} // check it aint broken
