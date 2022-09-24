@@ -198,11 +198,20 @@ var flstudio11flag = 0; // check
 				}
 			}
 			var newpath = path;
-			if (!overwriteFlp) // one liner B)
-				newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
+			if (!overwriteFlp) // one liner B) nvenrembeibd
+				{
+					if (path.endsWith(".fst"))
+				newpath = path.split(".fst").splice(0, path.split(".fst").length - 1).join("")
+					+ " - "
+					+ ((untrial) ? "NON-" : "")
+					+ "TRIALED MODE.fst";
+					else
+						newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
 					+ " - "
 					+ ((untrial) ? "NON-" : "")
 					+ "TRIALED MODE.flp";
+
+				}
 			sys.io.File.saveBytes(newpath, flp); // save it
 			yayyoudidit(); // display happy text :D
 			nomoreevents(null);
