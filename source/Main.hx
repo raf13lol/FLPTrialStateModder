@@ -141,7 +141,7 @@ class PlayState extends FlxState
 			var fixyArray = unlockArray;
 			if (!untrial)
 				fixyArray = lockArray;
-
+var flstudio11flag = 0; // check
 			for (i in 0x30...flp.b.length) // detect 00 00 00 D4 34 and set the flag to correct value
 			{
 				if (flp.b[i] == 0x00 && flp.b[i + 1] == 0x00 && flp.b[i + 2] == 0x00 && flp.b[i + 3] == 0xD4 && flp.b[i + 4] == 0x34)
@@ -153,14 +153,40 @@ class PlayState extends FlxState
 							if (flp.b[j] == fixyArray[k][0])
 							{
 								flp.b[j] = fixyArray[k][1];
+								
 							}
 						}
 					}
+					flstudio11flag++;
 				}
 
 				if (flp.b.length - i < 20)
 					break;
 			}
+			if (flstudio11flag == 0) // kinda sus that there no plugins found or effects
+				{
+						for (i in 0x30...flp.b.length) // detect 00 00 00 D4 34 and set the flag to correct value
+			{
+				if (flp.b[i] == 0x00 && flp.b[i + 1] == 0xD4 && flp.b[i +2] == 0x34)
+				{
+					for (j in i...i + 25)
+					{
+						for (k in 0...fixyArray.length)
+						{
+							if (flp.b[j] == fixyArray[k][0])
+							{
+								flp.b[j] = fixyArray[k][1];
+								
+							}
+						}
+					}
+					flstudio11flag++;
+				}
+
+				if (flp.b.length - i < 20)
+					break;
+			}
+				}  // kinda ineffeicenve but whatecever!!!
 			for (i in 0...0x30) // set trial header thing to 01
 			{
 				if (flp.b[i] == 0x1c)
