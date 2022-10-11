@@ -1,3 +1,7 @@
+1.3.1:
+
+- properly finished fst support + added text for it persay
+
 1.3.0:
 
 - fst support 

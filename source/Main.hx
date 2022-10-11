@@ -69,22 +69,28 @@ class PlayState extends FlxState
 		var bg = new FlxSprite().loadGraphic("assets/bg.png");
 		bg.screenCenter();
 		add(bg);
-		var untrialbutton = new FlxButton(0, 0, "Untrial-ize FLP", function()
+		var untrialbutton = new FlxButton(0, 0, "Untrial-ize FLP/FST", function()
 		{
 			untrial = true;
 			flpFile = new FileReference(); // make it new and existing
 			flpFile.addEventListener(Event.SELECT, flp); // add if people confirm
 			flpFile.addEventListener(Event.CANCEL, nomoreevents); // add if people say nah
-			flpFile.browse([new FileFilter("FL Studio Project files (*.flp).", "flp")]); // start that file selecter B)
+			flpFile.browse([
+				new FileFilter("FL Studio Project files (*.flp).", "flp"),
+				new FileFilter("FL Studio Preset files (*.fst).", "fst")
+			]); // start that file selecter B)
 		});
 		add(untrialbutton);
-		var trial = new FlxButton(0, 0, "Trial-ize FLP", function()
+		var trial = new FlxButton(0, 0, "Trial-ize FLP/FST", function()
 		{
 			untrial = false;
 			flpFile = new FileReference(); // make it new and existing
 			flpFile.addEventListener(Event.SELECT, flp); // add if people confirm
 			flpFile.addEventListener(Event.CANCEL, nomoreevents); // add if people say nah
-			flpFile.browse([new FileFilter("FL Studio Project files (*.flp).", "flp")]); // start that file selecter B)
+			flpFile.browse([
+				new FileFilter("FL Studio Project files (*.flp).", "flp"),
+				new FileFilter("FL Studio Preset files (*.fst).", "fst")
+			]); // start that file selecter B)
 		});
 		add(trial);
 		var overwriteText = new FlxText(50, 50, 0, "You are currently " + (overwriteFlp ? "" : "not ") + "in overwriting mode.", 20);
@@ -100,23 +106,27 @@ class PlayState extends FlxState
 		overwriteButton.label.updateHitbox();
 		overwriteButton.label.fieldWidth = 245;
 		overwriteButton.label.x += 120;
+	overwriteButton.label.offset.y += 2;
+	overwriteButton.label.offset.x -= 3;
 		add(overwriteText);
 		add(overwriteButton);
 		var sizetoscale = 3.0;
 		var extraoffset = 30;
 		// ignore code below just trying to make it look good with bigger buttons
-		untrialbutton.scale.set(sizetoscale, sizetoscale);
+		untrialbutton.scale.set(sizetoscale, sizetoscale + 1.5);
 		untrialbutton.label.scale.set(sizetoscale, sizetoscale);
 		untrialbutton.updateHitbox();
 		untrialbutton.label.updateHitbox();
 		untrialbutton.screenCenter();
 		untrialbutton.x -= untrialbutton.width + extraoffset;
-		trial.scale.set(sizetoscale, sizetoscale);
+		untrialbutton.label.offset.y -= 3.5;
+		trial.scale.set(sizetoscale, sizetoscale + 1.5);
 		trial.label.scale.set(sizetoscale, sizetoscale);
 		trial.updateHitbox();
 		trial.label.updateHitbox();
 		trial.screenCenter();
 		trial.x += trial.width + extraoffset;
+		trial.label.offset.y -= 8;
 		super.create();
 	}
 
