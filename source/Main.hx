@@ -18,6 +18,7 @@ import haxe.Int64;
 import haxe.io.Bytes;
 import haxe.io.BytesData;
 import haxe.io.Path;
+import lime.ui.MouseCursor;
 import openfl.Lib;
 import openfl.display.Sprite;
 import openfl.events.Event;
@@ -25,6 +26,7 @@ import openfl.net.FileFilter;
 import openfl.net.FileReference;
 import openfl.ui.MouseCursor;
 import sys.io.File;
+import sys.thread.Thread;
 
 using StringTools;
 
@@ -43,6 +45,7 @@ class Main extends Sprite
 		FlxG.save.bind('FLPTrialStateModder' #if (flixel <= "5.0.0"), 'RafPlayz69YT' #end);
 
 		FlxG.mouse.useSystemCursor = true;
+		FlxG.autoPause = false;
 
 		Lib.application.window.resizable = false;
 
@@ -80,6 +83,9 @@ class PlayState extends FlxState
 
 	var overwriteFlp(default, set):Bool = true;
 
+	var trialButton:FlxButton;
+	var untrialButton:FlxButton;
+
 	override public function create()
 	{
 		if (FlxG.save.data.overwrite == null)
@@ -107,19 +113,19 @@ class PlayState extends FlxState
 		var padding = -70;
 		var offsetY = 100;
 
-		var untrialbutton = new FunnyButton(0, 0, "Untrial-ize FLP/FST", sizetoscale, function()
+		untrialButton = new FunnyButton(0, 0, "Untrial-ize FLP", sizetoscale, function()
 		{
 			untrial = true;
 			browseFLP();
 		});
-		add(untrialbutton);
+		add(untrialButton);
 
-		var trial = new FunnyButton(0, 0, "Trial-ize FLP/FST", sizetoscale, function()
+		trialButton = new FunnyButton(0, 0, "Trial-ize FLP", sizetoscale, function()
 		{
 			untrial = false;
 			browseFLP();
 		});
-		add(trial);
+		add(trialButton);
 
 		overwriteButton = new FlxUICheckBox(0, 100, null, null, "Toggle overwriting mode", 200, null, function()
 		{
@@ -128,25 +134,36 @@ class PlayState extends FlxState
 
 		overwriteButton.checked = overwriteFlp;
 
-		untrialbutton.screenCenter();
-		untrialbutton.x -= untrialbutton.width + padding;
-		untrialbutton.y += offsetY;
+		untrialButton.screenCenter();
+		untrialButton.x -= untrialButton.width + padding;
+		untrialButton.y += offsetY;
 
-		trial.screenCenter();
-		trial.x += trial.width + padding;
-		trial.y += offsetY;
+		trialButton.screenCenter();
+		trialButton.x += trialButton.width + padding;
+		trialButton.y += offsetY;
 
 		overwriteButton.scale.scale(1.5, 1.5);
-		overwriteButton.x = untrialbutton.x + 10;
+		overwriteButton.x = untrialButton.x + 10;
 		overwriteButton.getLabel().setFormat('assets/fonts/quicksandSemiBold.ttf', 16, FlxColor.WHITE, LEFT, OUTLINE, FlxColor.BLACK);
 		overwriteButton.getLabel().setBorderStyle(OUTLINE, FlxColor.BLACK, 2, 4);
 		// overwriteButton.updateHitbox(); why the hell does this fuck up the checkbox position
-		overwriteButton.textX += 15;
-		overwriteButton.y = untrialbutton.y - overwriteButton.height - 15;
+		overwriteButton.textX += 5;
+		overwriteButton.y = untrialButton.y - overwriteButton.height - 15;
 
 		add(overwriteButton);
 
 		FlxG.sound.play("assets/sounds/startup.wav"); // play that ding sound
+		FlxG.sound.playMusic('assets/music/kindaAmbientSong.wav', 0);
+		FlxG.sound.music.fadeIn(1, 0, 0.7);
+		Lib.application.window.onFocusIn.add(() ->
+		{
+			FlxG.sound.music.fadeIn(1, FlxG.sound.music.volume, 0.7); // i like polish
+			// -guy who made this
+		});
+		Lib.application.window.onFocusOut.add(() ->
+		{
+			FlxG.sound.music.fadeOut(1, 0);
+		});
 		super.create();
 	}
 
@@ -164,53 +181,37 @@ class PlayState extends FlxState
 		flpFile.addEventListener(Event.SELECT, processFLP); // add if people confirm
 		flpFile.addEventListener(Event.CANCEL, removeEvents); // add if people say nah
 		flpFile.browse([
-			new FileFilter("FL Studio Project files (*.flp).", "*.flp"),
-			new FileFilter("FL Studio Preset files (*.fst).", "*.fst")
+			new FileFilter("FL Studio Project file (*.flp)", "*.flp"),
+			new FileFilter("FL Studio Preset file (*.fst)", "*.fst")
 		]); // start that file selecter B)
 	}
 
 	function processFLP(?e:Event)
 	{
-		try
+		@:privateAccess Main.cursor = WAIT_ARROW;
+
+		// technically with this you can now untrialize more thean one file
+		Thread.create(() ->
 		{
-			@:privateAccess
+			try
 			{
-				var path = flpFile.__path; // get that path
-				if (path == null || !sys.FileSystem.exists(path) || (!path.endsWith(".flp") && !path.endsWith(".fst")))
+				@:privateAccess
 				{
-					return;
-				} // check it aint broken
-				var flp = File.getBytes(path); // yoink the bytes
-
-				var fixyArray = unlockArray;
-				if (!untrial)
-					fixyArray = lockArray;
-				var flstudio11flag = 0; // check
-				for (i in 0x30...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
-				{
-					if (flp.b[i] == 0x00 && flp.b[i + 1] == 0x00 && flp.b[i + 2] == 0x00 && flp.b[i + 3] == 0xD4 && flp.b[i + 4] == 0x34)
+					var path = flpFile.__path; // get that path
+					if (path == null || !sys.FileSystem.exists(path) || (!path.endsWith(".flp") && !path.endsWith(".fst")))
 					{
-						for (j in i...i + 25)
-						{
-							for (k in 0...fixyArray.length)
-							{
-								if (flp.b[j] == fixyArray[k][0])
-								{
-									flp.b[j] = fixyArray[k][1];
-								}
-							}
-						}
-						flstudio11flag++;
-					}
+						throw new Exception("Not a valid file!");
+					} // check it aint broken
+					var flp = File.getBytes(path); // yoink the bytes
 
-					if (flp.length - i < 20)
-						break;
-				}
-				if (flstudio11flag == 0) // kinda sus that there no plugins found or effects
-				{
-					for (i in 0x30...flp.length) // detect 00 D4 34 and set the flag to correct value
+					var fixyArray = unlockArray;
+					if (!untrial)
+						fixyArray = lockArray;
+
+					var flstudio11flag = 0; // check
+					for (i in 0x30...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
 					{
-						if (flp.b[i] == 0x00 && flp.b[i + 1] == 0xD4 && flp.b[i + 2] == 0x34)
+						if (flp.b[i] == 0x00 && flp.b[i + 1] == 0x00 && flp.b[i + 2] == 0x00 && flp.b[i + 3] == 0xD4 && flp.b[i + 4] == 0x34)
 						{
 							for (j in i...i + 25)
 							{
@@ -228,40 +229,63 @@ class PlayState extends FlxState
 						if (flp.length - i < 20)
 							break;
 					}
-				} // kinda ineffeicenve but whatecever!!!
-				for (i in 0...0x30) // set trial header thing to 01
-				{
-					if (flp.b[i] == 0x1c)
+					if (flstudio11flag == 0) // kinda sus that there no plugins found or effects
 					{
-						if (untrial)
-							flp.b[i + 1] = 0x01;
-						else
-							flp.b[i + 1] = 0x00;
+						for (i in 0x30...flp.length) // detect 00 D4 34 and set the flag to correct value
+						{
+							if (flp.b[i] == 0x00 && flp.b[i + 1] == 0xD4 && flp.b[i + 2] == 0x34)
+							{
+								for (j in i...i + 25)
+								{
+									for (k in 0...fixyArray.length)
+									{
+										if (flp.b[j] == fixyArray[k][0])
+										{
+											flp.b[j] = fixyArray[k][1];
+										}
+									}
+								}
+								flstudio11flag++;
+							}
+
+							if (flp.length - i < 20)
+								break;
+						}
+					} // kinda ineffeicenve but whatecever!!!
+					for (i in 0...0x30) // set trial header thing to 01
+					{
+						if (flp.b[i] == 0x1c)
+						{
+							if (untrial)
+								flp.b[i + 1] = 0x01;
+							else
+								flp.b[i + 1] = 0x00;
+						}
 					}
+					var newpath = path;
+					if (!overwriteFlp) // one liner B) nvenrembeibd
+					{
+						if (path.endsWith(".fst"))
+							newpath = path.split(".fst").splice(0, path.split(".fst").length - 1).join("")
+								+ " - "
+								+ ((untrial) ? "NON-" : "")
+								+ "TRIALED MODE.fst";
+						else
+							newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
+								+ " - "
+								+ ((untrial) ? "NON-" : "")
+								+ "TRIALED MODE.flp";
+					}
+					File.saveBytes(newpath, flp); // save it
+					flpDone(); // display happy text :D
+					removeEvents();
 				}
-				var newpath = path;
-				if (!overwriteFlp) // one liner B) nvenrembeibd
-				{
-					if (path.endsWith(".fst"))
-						newpath = path.split(".fst").splice(0, path.split(".fst").length - 1).join("")
-							+ " - "
-							+ ((untrial) ? "NON-" : "")
-							+ "TRIALED MODE.fst";
-					else
-						newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
-							+ " - "
-							+ ((untrial) ? "NON-" : "")
-							+ "TRIALED MODE.flp";
-				}
-				File.saveBytes(newpath, flp); // save it
-				flpDone(); // display happy text :D
-				removeEvents();
 			}
-		}
-		catch (e:Exception)
-		{
-			// todo: display sad text :((
-		}
+			catch (e:Exception)
+			{
+				flpError(e.message);
+			}
+		});
 	}
 
 	function flpDone()
@@ -277,9 +301,44 @@ class PlayState extends FlxState
 			}
 		});
 		Lib.application.window.alert();
-		var text = new FlxText(0, 0, 0, "Done! Test it out to see if it works!", 12);
+		var text = new FlxText(0, 0, FlxG.width, "Done! Test it out to see if it works!", 12);
 		text.x -= FlxG.width;
 		text.setFormat('assets/fonts/quicksandBold.ttf', 18, 0xFF8CEB7F, LEFT, NONE);
+		add(text);
+		FlxTween.tween(text, {x: 0}, 1, { // this needs help
+			ease: FlxEase.circOut,
+			onComplete: (_) ->
+			{
+				new FlxTimer().start(2, (_) ->
+				{
+					FlxTween.tween(text, {x: -FlxG.width}, 1, {
+						ease: FlxEase.circInOut,
+						onComplete: (_) ->
+						{
+							text.destroy();
+						}
+					});
+				});
+			}
+		});
+	}
+
+	function flpError(errorMessage:String)
+	{
+		FlxG.sound.play("assets/sounds/error.wav"); // play that ding sound
+		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0xFF5B3034, 0xFFEB7F7F]));
+		insert(1, bg);
+		FlxTween.tween(bg, {alpha: 0}, 1.5, {
+			ease: FlxEase.circInOut,
+			onComplete: (twn) ->
+			{
+				bg.destroy();
+			}
+		});
+		Lib.application.window.alert();
+		var text = new FlxText(0, 0, FlxG.width, 'Something went wrong :( Error message: $errorMessage', 12);
+		text.x -= FlxG.width;
+		text.setFormat('assets/fonts/quicksandBold.ttf', 18, 0xFFEB7F7F, LEFT, NONE);
 		add(text);
 		FlxTween.tween(text, {x: 0}, 1, { // this needs help
 			ease: FlxEase.circOut,
