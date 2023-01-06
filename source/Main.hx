@@ -6,10 +6,12 @@ import flixel.FlxG;
 import flixel.FlxGame;
 import flixel.FlxSprite;
 import flixel.FlxState;
+import flixel.addons.ui.FlxUICheckBox;
 import flixel.text.FlxText;
 import flixel.tweens.FlxTween;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
+import flixel.util.FlxGradient;
 import haxe.Int64;
 import haxe.io.Bytes;
 import haxe.io.BytesData;
@@ -32,6 +34,7 @@ class Main extends Sprite
 		#else
 		addChild(new FlxGame(0, 0, PlayState, 1, 60, 60, true));
 		#end
+		FlxG.save.bind('FLPTrialStateModder' #if (flixel <= "5.0.0"), 'RafPlayz69YT' #end);
 	}
 }
 
@@ -66,9 +69,10 @@ class PlayState extends FlxState
 		}
 		else
 			overwriteFlp = FlxG.save.data.overwrite;
-		var bg = new FlxSprite().loadGraphic("assets/bg.png");
+		var bg = FlxGradient.createGradientFlxSprite(FlxG.width, FlxG.height, [0xFFF4FF81, 0xFF000000], 0, -180, true);
 		bg.screenCenter();
 		add(bg);
+
 		var untrialbutton = new FlxButton(0, 0, "Untrial-ize FLP/FST", function()
 		{
 			untrial = true;
@@ -93,21 +97,22 @@ class PlayState extends FlxState
 			]); // start that file selecter B)
 		});
 		add(trial);
+
 		var overwriteText = new FlxText(50, 50, 0, "You are currently " + (overwriteFlp ? "" : "not ") + "in overwriting mode.", 20);
-		var overwriteButton = new FlxButton(50, 100, "Toggle overwriting mode.", function()
+		var overwriteButton = new FlxUICheckBox(50, 100, null, null, "Toggle overwriting mode", 100, null, function()
 		{
-			overwriteFlp = !overwriteFlp;
-			FlxG.save.data.overwrite = overwriteFlp;
+			// FlxG.save.data.overwrite = overwriteFlp;
 			overwriteText.text = "You are currently " + (overwriteFlp ? "" : "not ") + "in overwriting mode.";
 		});
-		overwriteButton.setGraphicSize(390, 75);
-		overwriteButton.label.scale.set(overwriteButton.scale.x - 2.25, overwriteButton.scale.y - 0.75);
-		overwriteButton.updateHitbox();
-		overwriteButton.label.updateHitbox();
-		overwriteButton.label.fieldWidth = 245;
-		overwriteButton.label.x += 120;
-	overwriteButton.label.offset.y += 2;
-	overwriteButton.label.offset.x -= 3;
+
+		// overwriteButton.setGraphicSize(390, 75);
+		// overwriteButton.label.scale.set(overwriteButton.scale.x - 2.25, overwriteButton.scale.y - 0.75);
+		// overwriteButton.updateHitbox();
+		// overwriteButton.label.updateHitbox();
+		// overwriteButton.label.fieldWidth = 245;
+		// overwriteButton.label.x += 120;
+		// overwriteButton.label.offset.y += 2;
+		// overwriteButton.label.offset.x -= 3;
 		add(overwriteText);
 		add(overwriteButton);
 		var sizetoscale = 3.0;
@@ -127,6 +132,7 @@ class PlayState extends FlxState
 		trial.screenCenter();
 		trial.x += trial.width + extraoffset;
 		trial.label.offset.y -= 8;
+		FlxG.sound.play("assets/startup.wav"); // play that ding sound
 		super.create();
 	}
 
