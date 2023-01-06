@@ -1,13 +1,13 @@
 package;
 
-import cpp.UInt16;
-import cpp.UInt8;
 import flixel.FlxG;
 import flixel.FlxGame;
 import flixel.FlxSprite;
 import flixel.FlxState;
 import flixel.addons.ui.FlxUICheckBox;
+import flixel.math.FlxPoint;
 import flixel.text.FlxText;
+import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
@@ -16,16 +16,21 @@ import haxe.Int64;
 import haxe.io.Bytes;
 import haxe.io.BytesData;
 import haxe.io.Path;
+import hl.UI;
+import openfl.Lib;
 import openfl.display.Sprite;
 import openfl.events.Event;
 import openfl.net.FileFilter;
 import openfl.net.FileReference;
+import openfl.ui.MouseCursor;
 import sys.io.File;
 
 using StringTools;
 
 class Main extends Sprite
 {
+	public static var cursor:MouseCursor;
+
 	public function new()
 	{
 		super();
@@ -35,14 +40,26 @@ class Main extends Sprite
 		addChild(new FlxGame(0, 0, PlayState, 1, 60, 60, true));
 		#end
 		FlxG.save.bind('FLPTrialStateModder' #if (flixel <= "5.0.0"), 'RafPlayz69YT' #end);
+
+		FlxG.mouse.useSystemCursor = true;
+
+		Lib.application.window.resizable = false;
+
+		Lib.current.addEventListener(Event.ENTER_FRAME, (evnt:Event) ->
+		{
+			Lib.application.window.cursor = cursor;
+		});
 	}
 }
 
 class PlayState extends FlxState
 {
 	var flpFile:FileReference;
-	var untrial = true;
-	var unlockArray = [
+	var untrial:Bool = true;
+
+	var overwriteButton:FlxUICheckBox;
+
+	static final unlockArray:Array<Array<Int>> = [
 		[0xD0, 0x50],
 		[0xF0, 0x70],
 		[0xD1, 0x51],
@@ -50,7 +67,8 @@ class PlayState extends FlxState
 		[0xC8, 0x41],
 		[0xC0, 0x40]
 	];
-	var lockArray = [
+
+	static final lockArray:Array<Array<Int>> = [
 		[0x50, 0xD0],
 		[0x70, 0xF0],
 		[0x51, 0xD1],
@@ -58,7 +76,8 @@ class PlayState extends FlxState
 		[0x41, 0xC8],
 		[0x40, 0xC0]
 	];
-	var overwriteFlp = true;
+
+	var overwriteFlp(default, set):Bool = true;
 
 	override public function create()
 	{
@@ -69,11 +88,17 @@ class PlayState extends FlxState
 		}
 		else
 			overwriteFlp = FlxG.save.data.overwrite;
-		var bg = FlxGradient.createGradientFlxSprite(FlxG.width, FlxG.height, [0xFFF4FF81, 0xFF000000], 0, -180, true);
-		bg.screenCenter();
-		add(bg);
 
-		var untrialbutton = new FlxButton(0, 0, "Untrial-ize FLP/FST", function()
+		bgColor = 0xFFF4FF81;
+
+		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0x90000000, 0x00000000]));
+		insert(0, bg);
+
+		var sizetoscale = FlxPoint.get(1, 1);
+		var padding = 5;
+		var offsetY = 100;
+
+		var untrialbutton = new FunnyButton(0, 0, "Untrial-ize FLP/FST", sizetoscale, function()
 		{
 			untrial = true;
 			flpFile = new FileReference(); // make it new and existing
@@ -85,7 +110,8 @@ class PlayState extends FlxState
 			]); // start that file selecter B)
 		});
 		add(untrialbutton);
-		var trial = new FlxButton(0, 0, "Trial-ize FLP/FST", function()
+
+		var trial = new FunnyButton(0, 0, "Trial-ize FLP/FST", sizetoscale, function()
 		{
 			untrial = false;
 			flpFile = new FileReference(); // make it new and existing
@@ -98,41 +124,29 @@ class PlayState extends FlxState
 		});
 		add(trial);
 
-		var overwriteText = new FlxText(50, 50, 0, "You are currently " + (overwriteFlp ? "" : "not ") + "in overwriting mode.", 20);
-		var overwriteButton = new FlxUICheckBox(50, 100, null, null, "Toggle overwriting mode", 100, null, function()
+		overwriteButton = new FlxUICheckBox(50, 100, null, null, "Toggle overwriting mode", 100, null, function()
 		{
-			// FlxG.save.data.overwrite = overwriteFlp;
-			overwriteText.text = "You are currently " + (overwriteFlp ? "" : "not ") + "in overwriting mode.";
+			overwriteFlp = overwriteButton.checked;
 		});
 
-		// overwriteButton.setGraphicSize(390, 75);
-		// overwriteButton.label.scale.set(overwriteButton.scale.x - 2.25, overwriteButton.scale.y - 0.75);
-		// overwriteButton.updateHitbox();
-		// overwriteButton.label.updateHitbox();
-		// overwriteButton.label.fieldWidth = 245;
-		// overwriteButton.label.x += 120;
-		// overwriteButton.label.offset.y += 2;
-		// overwriteButton.label.offset.x -= 3;
-		add(overwriteText);
-		add(overwriteButton);
-		var sizetoscale = 3.0;
-		var extraoffset = 30;
 		// ignore code below just trying to make it look good with bigger buttons
-		untrialbutton.scale.set(sizetoscale, sizetoscale + 1.5);
-		untrialbutton.label.scale.set(sizetoscale, sizetoscale);
-		untrialbutton.updateHitbox();
-		untrialbutton.label.updateHitbox();
+
 		untrialbutton.screenCenter();
-		untrialbutton.x -= untrialbutton.width + extraoffset;
-		untrialbutton.label.offset.y -= 3.5;
-		trial.scale.set(sizetoscale, sizetoscale + 1.5);
-		trial.label.scale.set(sizetoscale, sizetoscale);
-		trial.updateHitbox();
-		trial.label.updateHitbox();
+		untrialbutton.x -= untrialbutton.width + padding;
+		untrialbutton.y += offsetY;
+
 		trial.screenCenter();
-		trial.x += trial.width + extraoffset;
-		trial.label.offset.y -= 8;
-		FlxG.sound.play("assets/startup.wav"); // play that ding sound
+		trial.x += trial.width + padding;
+		trial.y += offsetY;
+
+		overwriteButton.scale.scale(1.2, 1.2);
+		// overwriteButton.updateHitbox(); why the hell does this fuck up the checkbox position
+		overwriteButton.textX += 15;
+		overwriteButton.y = untrialbutton.y - overwriteButton.height - 20;
+
+		add(overwriteButton);
+
+		FlxG.sound.play("assets/sounds/startup.wav"); // play that ding sound
 		super.create();
 	}
 
@@ -154,11 +168,13 @@ class PlayState extends FlxState
 			} // check it aint broken
 			var flp = sys.io.File.getBytes(path); // yoink the bytes
 
+			// hopefully flp.length is the same as flp.b.length
+
 			var fixyArray = unlockArray;
 			if (!untrial)
 				fixyArray = lockArray;
 			var flstudio11flag = 0; // check
-			for (i in 0x30...flp.b.length) // detect 00 00 00 D4 34 and set the flag to correct value
+			for (i in 0x30...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
 			{
 				if (flp.b[i] == 0x00 && flp.b[i + 1] == 0x00 && flp.b[i + 2] == 0x00 && flp.b[i + 3] == 0xD4 && flp.b[i + 4] == 0x34)
 				{
@@ -175,12 +191,12 @@ class PlayState extends FlxState
 					flstudio11flag++;
 				}
 
-				if (flp.b.length - i < 20)
+				if (flp.length - i < 20)
 					break;
 			}
 			if (flstudio11flag == 0) // kinda sus that there no plugins found or effects
 			{
-				for (i in 0x30...flp.b.length) // detect 00 D4 34 and set the flag to correct value
+				for (i in 0x30...flp.length) // detect 00 D4 34 and set the flag to correct value
 				{
 					if (flp.b[i] == 0x00 && flp.b[i + 1] == 0xD4 && flp.b[i + 2] == 0x34)
 					{
@@ -197,7 +213,7 @@ class PlayState extends FlxState
 						flstudio11flag++;
 					}
 
-					if (flp.b.length - i < 20)
+					if (flp.length - i < 20)
 						break;
 				}
 			} // kinda ineffeicenve but whatecever!!!
@@ -233,7 +249,16 @@ class PlayState extends FlxState
 
 	function yayyoudidit()
 	{
-		FlxG.sound.play("assets/ding.wav"); // play that ding sound
+		FlxG.sound.play("assets/sounds/ding.wav"); // play that ding sound
+		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0xFF355B30, 0xFF8CEB7F]));
+		insert(1, bg);
+		FlxTween.tween(bg, {alpha: 0}, 1.5, {
+			ease: FlxEase.circInOut,
+			onComplete: (twn) ->
+			{
+				bg.destroy();
+			}
+		});
 		var text = new FlxText(0, 0, 0, "Nice! Test it out to see if it works!", 28);
 		text.alignment = CENTER;
 		text.color = FlxColor.GREEN;
@@ -252,5 +277,11 @@ class PlayState extends FlxState
 				text.y -= 1.25;
 			}
 		});
+	}
+
+	function set_overwriteFlp(value:Bool)
+	{
+		FlxG.save.data.overwrite = value;
+		return overwriteFlp = value;
 	}
 }
