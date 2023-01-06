@@ -12,11 +12,12 @@ import flixel.tweens.FlxTween;
 import flixel.ui.FlxButton;
 import flixel.util.FlxColor;
 import flixel.util.FlxGradient;
+import flixel.util.FlxTimer;
+import haxe.Exception;
 import haxe.Int64;
 import haxe.io.Bytes;
 import haxe.io.BytesData;
 import haxe.io.Path;
-import hl.UI;
 import openfl.Lib;
 import openfl.display.Sprite;
 import openfl.events.Event;
@@ -94,42 +95,38 @@ class PlayState extends FlxState
 		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0x90000000, 0x00000000]));
 		insert(0, bg);
 
-		var sizetoscale = FlxPoint.get(1, 1);
-		var padding = 5;
+		var logo = new FlxSprite().loadGraphic('assets/images/logo.png');
+		logo.screenCenter(X);
+		logo.y = 50;
+		logo.scale.set(0.95, 0.95);
+		FlxTween.tween(logo, {"scale.x": 1.05, "scale.y": 1.05}, 5, {ease: FlxEase.sineInOut, type: PINGPONG});
+		logo.antialiasing = true;
+		add(logo);
+
+		var sizetoscale = FlxPoint.get(2, 1.5);
+		var padding = -70;
 		var offsetY = 100;
 
 		var untrialbutton = new FunnyButton(0, 0, "Untrial-ize FLP/FST", sizetoscale, function()
 		{
 			untrial = true;
-			flpFile = new FileReference(); // make it new and existing
-			flpFile.addEventListener(Event.SELECT, flp); // add if people confirm
-			flpFile.addEventListener(Event.CANCEL, nomoreevents); // add if people say nah
-			flpFile.browse([
-				new FileFilter("FL Studio Project files (*.flp).", "flp"),
-				new FileFilter("FL Studio Preset files (*.fst).", "fst")
-			]); // start that file selecter B)
+			browseFLP();
 		});
 		add(untrialbutton);
 
 		var trial = new FunnyButton(0, 0, "Trial-ize FLP/FST", sizetoscale, function()
 		{
 			untrial = false;
-			flpFile = new FileReference(); // make it new and existing
-			flpFile.addEventListener(Event.SELECT, flp); // add if people confirm
-			flpFile.addEventListener(Event.CANCEL, nomoreevents); // add if people say nah
-			flpFile.browse([
-				new FileFilter("FL Studio Project files (*.flp).", "flp"),
-				new FileFilter("FL Studio Preset files (*.fst).", "fst")
-			]); // start that file selecter B)
+			browseFLP();
 		});
 		add(trial);
 
-		overwriteButton = new FlxUICheckBox(50, 100, null, null, "Toggle overwriting mode", 100, null, function()
+		overwriteButton = new FlxUICheckBox(0, 100, null, null, "Toggle overwriting mode", 200, null, function()
 		{
 			overwriteFlp = overwriteButton.checked;
 		});
 
-		// ignore code below just trying to make it look good with bigger buttons
+		overwriteButton.checked = overwriteFlp;
 
 		untrialbutton.screenCenter();
 		untrialbutton.x -= untrialbutton.width + padding;
@@ -139,10 +136,13 @@ class PlayState extends FlxState
 		trial.x += trial.width + padding;
 		trial.y += offsetY;
 
-		overwriteButton.scale.scale(1.2, 1.2);
+		overwriteButton.scale.scale(1.5, 1.5);
+		overwriteButton.x = untrialbutton.x + 10;
+		overwriteButton.getLabel().setFormat('assets/fonts/quicksandSemiBold.ttf', 16, FlxColor.WHITE, LEFT, OUTLINE, FlxColor.BLACK);
+		overwriteButton.getLabel().setBorderStyle(OUTLINE, FlxColor.BLACK, 2, 4);
 		// overwriteButton.updateHitbox(); why the hell does this fuck up the checkbox position
 		overwriteButton.textX += 15;
-		overwriteButton.y = untrialbutton.y - overwriteButton.height - 20;
+		overwriteButton.y = untrialbutton.y - overwriteButton.height - 15;
 
 		add(overwriteButton);
 
@@ -150,55 +150,45 @@ class PlayState extends FlxState
 		super.create();
 	}
 
-	function nomoreevents(e) // stands for no untrial flp events
-	{
+	function removeEvents(?e:Event) // Bruh, Take this one! Like, really take this one. No more flpFile! No more events! No more Filereference events! No more FLP files! You've been removed!
+	{ // -me
+
 		flpFile.removeEventListener(Event.SELECT, null); // if them people cancel it / did it
 		flpFile.removeEventListener(Event.CANCEL, null); // ^
 		flpFile = null;
 	}
 
-	function flp(e)
+	function browseFLP()
 	{
-		@:privateAccess
+		flpFile = new FileReference(); // make it new and existing
+		flpFile.addEventListener(Event.SELECT, processFLP); // add if people confirm
+		flpFile.addEventListener(Event.CANCEL, removeEvents); // add if people say nah
+		flpFile.browse([
+			new FileFilter("FL Studio Project files (*.flp).", "*.flp"),
+			new FileFilter("FL Studio Preset files (*.fst).", "*.fst")
+		]); // start that file selecter B)
+	}
+
+	function processFLP(?e:Event)
+	{
+		try
 		{
-			var path = flpFile.__path; // get that path
-			if (path == null || !sys.FileSystem.exists(path) || (!path.endsWith(".flp") && !path.endsWith(".fst")))
+			@:privateAccess
 			{
-				return;
-			} // check it aint broken
-			var flp = sys.io.File.getBytes(path); // yoink the bytes
-
-			// hopefully flp.length is the same as flp.b.length
-
-			var fixyArray = unlockArray;
-			if (!untrial)
-				fixyArray = lockArray;
-			var flstudio11flag = 0; // check
-			for (i in 0x30...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
-			{
-				if (flp.b[i] == 0x00 && flp.b[i + 1] == 0x00 && flp.b[i + 2] == 0x00 && flp.b[i + 3] == 0xD4 && flp.b[i + 4] == 0x34)
+				var path = flpFile.__path; // get that path
+				if (path == null || !sys.FileSystem.exists(path) || (!path.endsWith(".flp") && !path.endsWith(".fst")))
 				{
-					for (j in i...i + 25)
-					{
-						for (k in 0...fixyArray.length)
-						{
-							if (flp.b[j] == fixyArray[k][0])
-							{
-								flp.b[j] = fixyArray[k][1];
-							}
-						}
-					}
-					flstudio11flag++;
-				}
+					return;
+				} // check it aint broken
+				var flp = File.getBytes(path); // yoink the bytes
 
-				if (flp.length - i < 20)
-					break;
-			}
-			if (flstudio11flag == 0) // kinda sus that there no plugins found or effects
-			{
-				for (i in 0x30...flp.length) // detect 00 D4 34 and set the flag to correct value
+				var fixyArray = unlockArray;
+				if (!untrial)
+					fixyArray = lockArray;
+				var flstudio11flag = 0; // check
+				for (i in 0x30...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
 				{
-					if (flp.b[i] == 0x00 && flp.b[i + 1] == 0xD4 && flp.b[i + 2] == 0x34)
+					if (flp.b[i] == 0x00 && flp.b[i + 1] == 0x00 && flp.b[i + 2] == 0x00 && flp.b[i + 3] == 0xD4 && flp.b[i + 4] == 0x34)
 					{
 						for (j in i...i + 25)
 						{
@@ -216,38 +206,65 @@ class PlayState extends FlxState
 					if (flp.length - i < 20)
 						break;
 				}
-			} // kinda ineffeicenve but whatecever!!!
-			for (i in 0...0x30) // set trial header thing to 01
-			{
-				if (flp.b[i] == 0x1c)
+				if (flstudio11flag == 0) // kinda sus that there no plugins found or effects
 				{
-					if (untrial)
-						flp.b[i + 1] = 0x01;
-					else
-						flp.b[i + 1] = 0x00;
+					for (i in 0x30...flp.length) // detect 00 D4 34 and set the flag to correct value
+					{
+						if (flp.b[i] == 0x00 && flp.b[i + 1] == 0xD4 && flp.b[i + 2] == 0x34)
+						{
+							for (j in i...i + 25)
+							{
+								for (k in 0...fixyArray.length)
+								{
+									if (flp.b[j] == fixyArray[k][0])
+									{
+										flp.b[j] = fixyArray[k][1];
+									}
+								}
+							}
+							flstudio11flag++;
+						}
+
+						if (flp.length - i < 20)
+							break;
+					}
+				} // kinda ineffeicenve but whatecever!!!
+				for (i in 0...0x30) // set trial header thing to 01
+				{
+					if (flp.b[i] == 0x1c)
+					{
+						if (untrial)
+							flp.b[i + 1] = 0x01;
+						else
+							flp.b[i + 1] = 0x00;
+					}
 				}
+				var newpath = path;
+				if (!overwriteFlp) // one liner B) nvenrembeibd
+				{
+					if (path.endsWith(".fst"))
+						newpath = path.split(".fst").splice(0, path.split(".fst").length - 1).join("")
+							+ " - "
+							+ ((untrial) ? "NON-" : "")
+							+ "TRIALED MODE.fst";
+					else
+						newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
+							+ " - "
+							+ ((untrial) ? "NON-" : "")
+							+ "TRIALED MODE.flp";
+				}
+				File.saveBytes(newpath, flp); // save it
+				flpDone(); // display happy text :D
+				removeEvents();
 			}
-			var newpath = path;
-			if (!overwriteFlp) // one liner B) nvenrembeibd
-			{
-				if (path.endsWith(".fst"))
-					newpath = path.split(".fst").splice(0, path.split(".fst").length - 1).join("")
-						+ " - "
-						+ ((untrial) ? "NON-" : "")
-						+ "TRIALED MODE.fst";
-				else
-					newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
-						+ " - "
-						+ ((untrial) ? "NON-" : "")
-						+ "TRIALED MODE.flp";
-			}
-			sys.io.File.saveBytes(newpath, flp); // save it
-			yayyoudidit(); // display happy text :D
-			nomoreevents(null);
+		}
+		catch (e:Exception)
+		{
+			// todo: display sad text :((
 		}
 	}
 
-	function yayyoudidit()
+	function flpDone()
 	{
 		FlxG.sound.play("assets/sounds/ding.wav"); // play that ding sound
 		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0xFF355B30, 0xFF8CEB7F]));
@@ -259,22 +276,25 @@ class PlayState extends FlxState
 				bg.destroy();
 			}
 		});
-		var text = new FlxText(0, 0, 0, "Nice! Test it out to see if it works!", 28);
-		text.alignment = CENTER;
-		text.color = FlxColor.GREEN;
-		text.screenCenter();
-		text.y += 200;
+		Lib.application.window.alert();
+		var text = new FlxText(0, 0, 0, "Done! Test it out to see if it works!", 12);
+		text.x -= FlxG.width;
+		text.setFormat('assets/fonts/quicksandBold.ttf', 18, 0xFF8CEB7F, LEFT, NONE);
 		add(text);
-		FlxTween.tween(text, {alpha: 0}, 1, {
-			onComplete: function(_)
+		FlxTween.tween(text, {x: 0}, 1, { // this needs help
+			ease: FlxEase.circOut,
+			onComplete: (_) ->
 			{
-				remove(text, true);
-				text.destroy();
-				text = null;
-			},
-			onUpdate: function(_)
-			{
-				text.y -= 1.25;
+				new FlxTimer().start(2, (_) ->
+				{
+					FlxTween.tween(text, {x: -FlxG.width}, 1, {
+						ease: FlxEase.circInOut,
+						onComplete: (_) ->
+						{
+							text.destroy();
+						}
+					});
+				});
 			}
 		});
 	}
