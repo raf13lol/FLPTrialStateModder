@@ -170,7 +170,7 @@ class PlayState extends FlxState
 		});
 		Lib.application.window.onFocusOut.add(() ->
 		{
-			FlxG.sound.music.fadeOut(1, 0);
+			FlxG.sound.music.fadeOut(0.7, 0);
 		});
 
 		if (FlxG.save.data.overwrite == null)
