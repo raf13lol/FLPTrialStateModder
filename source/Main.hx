@@ -61,8 +61,6 @@ class PlayState extends FlxState
 	var flpFile:FileReference;
 	var untrial:Bool = true;
 
-	var overwriteButton:FlxUICheckBox;
-
 	static final unlockArray:Array<Array<Int>> = [
 		[0xD0, 0x50],
 		[0xF0, 0x70],
@@ -81,21 +79,19 @@ class PlayState extends FlxState
 		[0x40, 0xC0]
 	];
 
+	static final untrialPrefix:String = "Untial-ize";
+	static final trialPrefix:String = "Tial-ize";
+
 	var overwriteFlp(default, set):Bool = true;
+	var fstMode(default, set):Bool = false;
 
 	var trialButton:FlxButton;
 	var untrialButton:FlxButton;
+	var overwriteButton:FlxUICheckBox;
+	var fstButton:FlxUICheckBox;
 
 	override public function create()
 	{
-		if (FlxG.save.data.overwrite == null)
-		{
-			FlxG.save.data.overwrite = true;
-			FlxG.save.flush();
-		}
-		else
-			overwriteFlp = FlxG.save.data.overwrite;
-
 		bgColor = 0xFFF4FF81;
 
 		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0x90000000, 0x00000000]));
@@ -127,12 +123,15 @@ class PlayState extends FlxState
 		});
 		add(trialButton);
 
-		overwriteButton = new FlxUICheckBox(0, 100, null, null, "Toggle overwriting mode", 200, null, function()
+		overwriteButton = new FlxUICheckBox(0, 100, null, null, "Toggle overwriting mode", 150, null, function()
 		{
 			overwriteFlp = overwriteButton.checked;
 		});
 
-		overwriteButton.checked = overwriteFlp;
+		fstButton = new FlxUICheckBox(0, 100, null, null, "Toggle FST mode", 150, null, function()
+		{
+			fstMode = fstButton.checked;
+		});
 
 		untrialButton.screenCenter();
 		untrialButton.x -= untrialButton.width + padding;
@@ -142,9 +141,9 @@ class PlayState extends FlxState
 		trialButton.x += trialButton.width + padding;
 		trialButton.y += offsetY;
 
-		overwriteButton.scale.scale(1.5, 1.5);
+		overwriteButton.scale.scale(1.25, 1.25);
 		overwriteButton.x = untrialButton.x + 10;
-		overwriteButton.getLabel().setFormat('assets/fonts/quicksandSemiBold.ttf', 16, FlxColor.WHITE, LEFT, OUTLINE, FlxColor.BLACK);
+		overwriteButton.getLabel().setFormat('assets/fonts/quicksandSemiBold.ttf', 12, FlxColor.WHITE, LEFT, OUTLINE, FlxColor.BLACK);
 		overwriteButton.getLabel().setBorderStyle(OUTLINE, FlxColor.BLACK, 2, 4);
 		// overwriteButton.updateHitbox(); why the hell does this fuck up the checkbox position
 		overwriteButton.textX += 5;
@@ -152,18 +151,47 @@ class PlayState extends FlxState
 
 		add(overwriteButton);
 
-		FlxG.sound.play("assets/sounds/startup.wav"); // play that ding sound
+		fstButton.scale.scale(1.25, 1.25);
+		fstButton.x = trialButton.x + 10;
+		fstButton.getLabel().setFormat('assets/fonts/quicksandSemiBold.ttf', 12, FlxColor.WHITE, LEFT, OUTLINE, FlxColor.BLACK);
+		fstButton.getLabel().setBorderStyle(OUTLINE, FlxColor.BLACK, 2, 4);
+		// fstButton.updateHitbox(); why the hell does this fuck up the checkbox position
+		fstButton.textX += 5;
+		fstButton.y = trialButton.y - fstButton.height - 15;
+
+		add(fstButton);
+
+		FlxG.sound.play("assets/sounds/startup.wav"); // play that fl bwadomp sound
 		FlxG.sound.playMusic('assets/music/kindaAmbientSong.wav', 0);
 		FlxG.sound.music.fadeIn(1, 0, 0.7);
 		Lib.application.window.onFocusIn.add(() ->
 		{
-			FlxG.sound.music.fadeIn(1, FlxG.sound.music.volume, 0.7); // i like polish
-			// -guy who made this
+			FlxG.sound.music.fadeIn(1, FlxG.sound.music.volume, 0.7);
 		});
 		Lib.application.window.onFocusOut.add(() ->
 		{
 			FlxG.sound.music.fadeOut(1, 0);
 		});
+
+		if (FlxG.save.data.overwrite == null)
+		{
+			FlxG.save.data.overwrite = true;
+			FlxG.save.flush();
+		}
+		else
+			fstMode = FlxG.save.data.overwrite;
+
+		if (FlxG.save.data.fst == null)
+		{
+			FlxG.save.data.fst = false;
+			FlxG.save.flush();
+		}
+		else
+			overwriteFlp = FlxG.save.data.fst;
+
+		overwriteButton.checked = overwriteFlp;
+		fstButton.checked = fstMode;
+
 		super.create();
 	}
 
@@ -180,15 +208,16 @@ class PlayState extends FlxState
 		flpFile = new FileReference(); // make it new and existing
 		flpFile.addEventListener(Event.SELECT, processFLP); // add if people confirm
 		flpFile.addEventListener(Event.CANCEL, removeEvents); // add if people say nah
-		flpFile.browse([
-			new FileFilter("FL Studio Project file (*.flp)", "*.flp"),
-			new FileFilter("FL Studio Preset file (*.fst)", "*.fst")
-		]); // start that file selecter B)
+		if (fstMode)
+			flpFile.browse([new FileFilter("FL Studio Preset file (*.fst)", "*.fst")]);
+		else
+			flpFile.browse([new FileFilter("FL Studio Project file (*.flp)", "*.flp")]);
+		// start that file selecter B)
 	}
 
 	function processFLP(?e:Event)
 	{
-		@:privateAccess Main.cursor = WAIT_ARROW;
+		@:privateAccess Main.cursor = WAIT;
 
 		// technically with this you can now untrialize more thean one file
 		Thread.create(() ->
@@ -269,12 +298,12 @@ class PlayState extends FlxState
 							newpath = path.split(".fst").splice(0, path.split(".fst").length - 1).join("")
 								+ " - "
 								+ ((untrial) ? "NON-" : "")
-								+ "TRIALED MODE.fst";
+								+ "TRIAL MODE.fst";
 						else
 							newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
 								+ " - "
 								+ ((untrial) ? "NON-" : "")
-								+ "TRIALED MODE.flp";
+								+ "TRIAL MODE.flp";
 					}
 					File.saveBytes(newpath, flp); // save it
 					flpDone(); // display happy text :D
@@ -361,6 +390,17 @@ class PlayState extends FlxState
 	function set_overwriteFlp(value:Bool)
 	{
 		FlxG.save.data.overwrite = value;
+		FlxG.save.flush();
 		return overwriteFlp = value;
+	}
+
+	function set_fstMode(value:Bool)
+	{
+		var mode = (value ? "FST" : "FLP");
+		FlxG.save.data.fst = value;
+		FlxG.save.flush();
+		untrialButton.text = '$untrialPrefix $mode';
+		trialButton.text = '$trialPrefix $mode';
+		return fstMode = value;
 	}
 }

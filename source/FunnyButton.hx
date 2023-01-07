@@ -23,6 +23,7 @@ class FunnyButton extends FlxButton
 		super(x, y, text, onPress);
 		// loadGraphic('assets/images/button.png', false); todo
 		onOver.sound = FlxG.sound.load("assets/sounds/buttonHover.wav", 1, false);
+		onDown.sound = FlxG.sound.load("assets/sounds/buttonClick.wav", 1, false);
 
 		label.setFormat('assets/fonts/quicksandSemiBold.ttf', 16, FlxColor.BLACK, CENTER);
 
