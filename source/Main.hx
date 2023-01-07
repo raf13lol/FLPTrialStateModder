@@ -79,8 +79,8 @@ class PlayState extends FlxState
 		[0x40, 0xC0]
 	];
 
-	static final untrialPrefix:String = "Untial-ize";
-	static final trialPrefix:String = "Tial-ize";
+	static final untrialPrefix:String = "Untrial-ize";
+	static final trialPrefix:String = "Trial-ize";
 
 	var overwriteFlp(default, set):Bool = true;
 	var fstMode(default, set):Bool = false;
