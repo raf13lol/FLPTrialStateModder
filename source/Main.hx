@@ -226,6 +226,10 @@ class PlayState extends FlxState
 			{
 				@:privateAccess
 				{
+					var overrideMode:Bool = overwriteFlp;
+					var isFST:Bool = fstMode;
+					// save these 2 variables so if someone changes them mid process it dosent fuck up
+
 					var path = flpFile.__path; // get that path
 					if (path == null || !sys.FileSystem.exists(path) || (!path.endsWith(".flp") && !path.endsWith(".fst")))
 					{
@@ -292,18 +296,10 @@ class PlayState extends FlxState
 						}
 					}
 					var newpath = path;
-					if (!overwriteFlp) // one liner B) nvenrembeibd
+					if (!overrideMode) // one liner B) nvenrembeibd
 					{
-						if (path.endsWith(".fst"))
-							newpath = path.split(".fst").splice(0, path.split(".fst").length - 1).join("")
-								+ " - "
-								+ ((untrial) ? "NON-" : "")
-								+ "TRIAL MODE.fst";
-						else
-							newpath = path.split(".flp").splice(0, path.split(".flp").length - 1).join("")
-								+ " - "
-								+ ((untrial) ? "NON-" : "")
-								+ "TRIAL MODE.flp";
+						var suffix = (isFST ? '.fst' : '.flp');
+						newpath = '${path.split(".fst").splice(0, path.split(".fst").length - 1).join("")} - ${((untrial) ? "NON-" : "")} TRIAL MODE$suffix';
 					}
 					@:privateAccess Main.cursor = ARROW;
 					File.saveBytes(newpath, flp); // save it
@@ -313,6 +309,7 @@ class PlayState extends FlxState
 			}
 			catch (e:Exception)
 			{
+				@:privateAccess Main.cursor = ARROW;
 				flpError(e.message);
 			}
 		});
