@@ -217,7 +217,7 @@ class PlayState extends FlxState
 
 	function processFLP(?e:Event)
 	{
-		@:privateAccess Main.cursor = WAIT;
+		@:privateAccess Main.cursor = WAIT_ARROW;
 
 		// technically with this you can now untrialize more thean one file
 		Thread.create(() ->
@@ -305,6 +305,7 @@ class PlayState extends FlxState
 								+ ((untrial) ? "NON-" : "")
 								+ "TRIAL MODE.flp";
 					}
+					@:privateAccess Main.cursor = ARROW;
 					File.saveBytes(newpath, flp); // save it
 					flpDone(); // display happy text :D
 					removeEvents();
