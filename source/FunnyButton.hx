@@ -20,7 +20,7 @@ class FunnyButton extends FlxButton
 
 	public var enabled:Bool = true;
 
-	function new(x:Int, y:Int, text:String, scale:FlxPoint, ?onPress:Void->Void)
+	public function new(x:Int, y:Int, text:String, scale:FlxPoint, ?onPress:Void->Void)
 	{
 		super(x, y, text, onPress);
 		// loadGraphic('assets/images/button.png', false); todo
