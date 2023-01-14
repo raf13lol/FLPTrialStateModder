@@ -187,7 +187,7 @@ class PlayState extends FlxState
 			FlxG.save.flush();
 		}
 		else
-			overwriteFlp = FlxG.save.data.fst;
+			fstMode = FlxG.save.data.fst;
 
 		overwriteButton.checked = overwriteFlp;
 		fstButton.checked = fstMode;
