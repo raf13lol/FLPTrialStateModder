@@ -179,7 +179,7 @@ class PlayState extends FlxState
 			FlxG.save.flush();
 		}
 		else
-			fstMode = FlxG.save.data.overwrite;
+			overwriteFlp = FlxG.save.data.overwrite;
 
 		if (FlxG.save.data.fst == null)
 		{
