@@ -42,7 +42,6 @@ class Main extends Sprite
 		#else
 		addChild(new FlxGame(0, 0, PlayState, 1, 60, 60, true));
 		#end
-		FlxG.save.bind('FLPTrialStateModder' #if (flixel <= "5.0.0"), 'RafPlayz69YT' #end);
 
 		FlxG.mouse.useSystemCursor = true;
 		FlxG.autoPause = false;
@@ -93,6 +92,8 @@ class PlayState extends FlxState
 	override public function create()
 	{
 		bgColor = 0xFFF4FF81;
+		
+		FlxG.save.bind('FLPTrialStateModder' #if (flixel <= "5.0.0"), 'RafPlayz69YT' #end);
 
 		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0x90000000, 0x00000000]));
 		insert(0, bg);
@@ -177,6 +178,7 @@ class PlayState extends FlxState
 		{
 			FlxG.save.data.overwrite = true;
 			FlxG.save.flush();
+			overwriteFlp = true;
 		}
 		else
 			overwriteFlp = FlxG.save.data.overwrite;
@@ -185,6 +187,7 @@ class PlayState extends FlxState
 		{
 			FlxG.save.data.fst = false;
 			FlxG.save.flush();
+			fstMode = false;
 		}
 		else
 			fstMode = FlxG.save.data.fst;
