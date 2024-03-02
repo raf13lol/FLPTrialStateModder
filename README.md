@@ -5,16 +5,16 @@ it also sets all plugins/effects flags to the correct thing
 
 ## TODO
 
-- ~~make fl studio 21 work with it (high importance)~~ prob never gonna work so use [the latest version of fl 20 (supplied by kstr)](https://drive.google.com/file/d/1cFEy_mnZQPmSVDvZ5bE_FbIqAsGHadn9/view)
+- ~~make fl studio 21 work with it (high importance)~~ prob never gonna work so use ~~[the latest version of fl 20 (supplied by ico)](https://drive.google.com/file/d/1cFEy_mnZQPmSVDvZ5bE_FbIqAsGHadn9/view)~~ url doesnt exist
 - ~~do a ui overhaul (not very important at all)~~ nvm done lol thanks plank
   
 ## credits
 
-[me](https://www.youtube.com/c/@RafPlayz69) - cool code that does the untrialing/ trialing part and stuff
+[me](https://www.youtube.com/c/@raf13lol) - cool code that does the untrialing/ trialing part and stuff
 
-[kstr](https://www.youtube.com/@kstr743) - helped a lot with this
+[ico](https://www.youtube.com/@icomiki) - helped a lot with this
 
-[plank guy](https://github.com/ThePlank) - really epic guy as he did the new ui
+[plank person](https://github.com/ThePlank) - really epic person as he did the new ui
 
 
 [google drive](https://drive.google.com/file/d/12Rx2JxdKwet5lb0lIIrOAI1x30Haxh-g/view?usp=sharing)
