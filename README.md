@@ -14,7 +14,7 @@ it also sets all plugins/effects flags to the correct thing
 
 [ico](https://www.youtube.com/@icomiki) - helped a lot with this
 
-[plank person](https://github.com/ThePlank) - really epic person as he did the new ui
+[plank person](https://github.com/ThePlank) - really epic person as they did the new ui
 
 
 [google drive](https://drive.google.com/file/d/12Rx2JxdKwet5lb0lIIrOAI1x30Haxh-g/view?usp=sharing)
