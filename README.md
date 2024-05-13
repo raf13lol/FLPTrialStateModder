@@ -12,9 +12,6 @@ it also sets all plugins/effects flags to the correct thing
 
 [me](https://www.youtube.com/c/@raf13lol) - cool code that does the untrialing/ trialing part and stuff
 
-[ico](https://www.youtube.com/@icomiki) - helped a lot with this
+[ico](https://www.youtube.com/@icomiki_) - helped a lot with this
 
 [plank person](https://github.com/ThePlank) - really epic person as they did the new ui
-
-
-[google drive](https://drive.google.com/file/d/12Rx2JxdKwet5lb0lIIrOAI1x30Haxh-g/view?usp=sharing)
