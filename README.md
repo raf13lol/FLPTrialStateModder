@@ -1,3 +1,6 @@
+# NOTE: doesn't work for FL 21 and higher
+# they added stuff so it's not that easy
+
 # how it works
 there is a one byte flag in the flp that if set to 01 will make fl studio think it is not in trial mode 00 does the opposite
 i just set the flag accordingly
