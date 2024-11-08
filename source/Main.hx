@@ -37,11 +37,8 @@ class Main extends Sprite
 	public function new()
 	{
 		super();
-		#if (flixel >= "5.0.0")
-		addChild(new FlxGame(0, 0, PlayState, 60, 60, true));
-		#else
-		addChild(new FlxGame(0, 0, PlayState, 1, 60, 60, true));
-		#end
+
+		addChild(new FlxGame(350, 300, PlayState, 60, 60, true));
 
 		FlxG.mouse.useSystemCursor = true;
 		FlxG.autoPause = false;
@@ -82,42 +79,45 @@ class PlayState extends FlxState
 	static final trialPrefix:String = "Trial-ize";
 
 	var overwriteFlp(default, set):Bool = true;
-	var fstMode(default, set):Bool = false;
 
 	var trialButton:FlxButton;
 	var untrialButton:FlxButton;
 	var overwriteButton:FlxUICheckBox;
-	var fstButton:FlxUICheckBox;
+
+	var goodbgimg = FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0xFF355B30, 0xFF8CEB7F]);
+	var errorbgimg = FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0xFF5B3034, 0xFFEB7F7F]);
 
 	override public function create()
 	{
 		bgColor = 0xFFF4FF81;
-		
-		FlxG.save.bind('FLPTrialStateModder' #if (flixel <= "5.0.0"), 'RafPlayz69YT' #end);
+
+		FlxG.save.bind('FLPTrialStateModder' #if (flixel <= "5.0.0"), 'raf13lol' #end);
 
 		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0x90000000, 0x00000000]));
-		insert(0, bg);
+		add(bg);
 
 		var logo = new FlxSprite().loadGraphic('assets/images/logo.png');
 		logo.screenCenter(X);
 		logo.y = 50;
 		logo.scale.set(0.95, 0.95);
-		FlxTween.tween(logo, {"scale.x": 1.05, "scale.y": 1.05}, 5, {ease: FlxEase.sineInOut, type: PINGPONG});
 		logo.antialiasing = true;
 		add(logo);
 
-		var sizetoscale = FlxPoint.get(2, 1.5);
+		FlxTween.tween(logo, {"scale.x": 1.05, "scale.y": 1.05}, 5, {ease: FlxEase.sineInOut, type: PINGPONG});
+
+		// funnier name
+		var builttoscale = FlxPoint.get(2, 1.5);
 		var padding = -70;
 		var offsetY = 100;
 
-		untrialButton = new FunnyButton(0, 0, "Untrial-ize FLP", sizetoscale, function()
+		untrialButton = new FunnyButton(0, 0, "Untrial-ize FLP/FST", builttoscale, function()
 		{
 			untrial = true;
 			browseFLP();
 		});
 		add(untrialButton);
 
-		trialButton = new FunnyButton(0, 0, "Trial-ize FLP", sizetoscale, function()
+		trialButton = new FunnyButton(0, 0, "Trial-ize FLP/FST", builttoscale, function()
 		{
 			untrial = false;
 			browseFLP();
@@ -127,11 +127,6 @@ class PlayState extends FlxState
 		overwriteButton = new FlxUICheckBox(0, 100, null, null, "Toggle overwriting mode", 150, null, function()
 		{
 			overwriteFlp = overwriteButton.checked;
-		});
-
-		fstButton = new FlxUICheckBox(0, 100, null, null, "Toggle FST mode", 150, null, function()
-		{
-			fstMode = fstButton.checked;
 		});
 
 		untrialButton.screenCenter();
@@ -152,27 +147,7 @@ class PlayState extends FlxState
 
 		add(overwriteButton);
 
-		fstButton.scale.scale(1.25, 1.25);
-		fstButton.x = trialButton.x + 10;
-		fstButton.getLabel().setFormat('assets/fonts/quicksandSemiBold.ttf', 12, FlxColor.WHITE, LEFT, OUTLINE, FlxColor.BLACK);
-		fstButton.getLabel().setBorderStyle(OUTLINE, FlxColor.BLACK, 2, 4);
-		// fstButton.updateHitbox(); why the hell does this fuck up the checkbox position
-		fstButton.textX += 5;
-		fstButton.y = trialButton.y - fstButton.height - 15;
-
-		add(fstButton);
-
 		FlxG.sound.play("assets/sounds/startup.wav"); // play that fl bwadomp sound
-		FlxG.sound.playMusic('assets/music/kindaAmbientSong.wav', 0);
-		FlxG.sound.music.fadeIn(1, 0, 0.7);
-		Lib.application.window.onFocusIn.add(() ->
-		{
-			FlxG.sound.music.fadeIn(1, FlxG.sound.music.volume, 0.7);
-		});
-		Lib.application.window.onFocusOut.add(() ->
-		{
-			FlxG.sound.music.fadeOut(1, 0);
-		});
 
 		if (FlxG.save.data.overwrite == null)
 		{
@@ -183,112 +158,44 @@ class PlayState extends FlxState
 		else
 			overwriteFlp = FlxG.save.data.overwrite;
 
-		if (FlxG.save.data.fst == null)
-		{
-			FlxG.save.data.fst = false;
-			FlxG.save.flush();
-			fstMode = false;
-		}
-		else
-			fstMode = FlxG.save.data.fst;
-
 		overwriteButton.checked = overwriteFlp;
-		fstButton.checked = fstMode;
+
+		flpFile = new FileReference(); // make it new and existing
+		flpFile.addEventListener(Event.SELECT, processFLP); // add if people confirm
 
 		super.create();
 	}
 
-	function removeEvents(?e:Event) // Bruh, Take this one! Like, really take this one. No more flpFile! No more events! No more Filereference events! No more FLP files! You've been removed!
-	{ // -me
-
-		flpFile.removeEventListener(Event.SELECT, null); // if them people cancel it / did it
-		flpFile.removeEventListener(Event.CANCEL, null); // ^
-		flpFile = null;
-	}
-
 	function browseFLP()
 	{
-		flpFile = new FileReference(); // make it new and existing
-		flpFile.addEventListener(Event.SELECT, processFLP); // add if people confirm
-		flpFile.addEventListener(Event.CANCEL, removeEvents); // add if people say nah
-		if (fstMode)
-			flpFile.browse([new FileFilter("FL Studio Preset file (*.fst)", "*.fst")]);
-		else
-			flpFile.browse([new FileFilter("FL Studio Project file (*.flp)", "*.flp")]);
-		// start that file selecter B)
+		flpFile.browse([new FileFilter("FL Studio Project/Preset files (*.flp/*.fst)", "*.flp;*.fst"),]);
 	}
 
 	function processFLP(?e:Event)
 	{
-		@:privateAccess Main.cursor = WAIT_ARROW;
-
-		// technically with this you can now untrialize more thean one file
-		Thread.create(() ->
+		@:privateAccess
 		{
-			try
+			Main.cursor = WAIT_ARROW;
+
+			// technically with this you can now untrialize more thean one file
+			Thread.create(() ->
 			{
-				@:privateAccess
+				try
 				{
 					var overrideMode:Bool = overwriteFlp;
-					var isFST:Bool = fstMode;
 					// save these 2 variables so if someone changes them mid process it dosent fuck up
 
 					var path = flpFile.__path; // get that path
-					if (path == null || !sys.FileSystem.exists(path) || (!path.endsWith(".flp") && !path.endsWith(".fst")))
-					{
-						throw new Exception("Not a valid file!");
-					} // check it aint broken
+					if (path == null || !sys.FileSystem.exists(path))
+						throw new Exception("Not a valid file!"); // check it aint broken
+
 					var flp = File.getBytes(path); // yoink the bytes
 
-					var fixyArray = unlockArray;
-					if (!untrial)
-						fixyArray = lockArray;
+					// FLhd
+					if (flp.b[0] != 0x46 && flp.b[1] != 0x4c && flp.b[2] != 0x68 && flp.b[3] != 0x64)
+						throw new Exception("Not a valid file!");
 
-					var flstudio11flag = 0; // check
-					for (i in 0x30...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
-					{
-						if (flp.b[i] == 0x00 && flp.b[i + 1] == 0x00 && flp.b[i + 2] == 0x00 && flp.b[i + 3] == 0xD4 && flp.b[i + 4] == 0x34)
-						{
-							for (j in i...i + 25)
-							{
-								for (k in 0...fixyArray.length)
-								{
-									if (flp.b[j] == fixyArray[k][0])
-									{
-										flp.b[j] = fixyArray[k][1];
-									}
-								}
-							}
-							flstudio11flag++;
-						}
-
-						if (flp.length - i < 20)
-							break;
-					}
-					if (flstudio11flag == 0) // kinda sus that there no plugins found or effects
-					{
-						for (i in 0x30...flp.length) // detect 00 D4 34 and set the flag to correct value
-						{
-							if (flp.b[i] == 0x00 && flp.b[i + 1] == 0xD4 && flp.b[i + 2] == 0x34)
-							{
-								for (j in i...i + 25)
-								{
-									for (k in 0...fixyArray.length)
-									{
-										if (flp.b[j] == fixyArray[k][0])
-										{
-											flp.b[j] = fixyArray[k][1];
-										}
-									}
-								}
-								flstudio11flag++;
-							}
-
-							if (flp.length - i < 20)
-								break;
-						}
-					} // kinda ineffeicenve but whatecever!!!
-					for (i in 0...0x30) // set trial header thing to 01
+					for (i in 0x04...0x40) // set trial header thing to 01
 					{
 						if (flp.b[i] == 0x1c)
 						{
@@ -297,66 +204,109 @@ class PlayState extends FlxState
 							else
 								flp.b[i + 1] = 0x00;
 						}
+						// 0xc7 0x0c -> ascii version
+						if (flp.b[i] == 0xc7 && flp.b[i + 1] == 0x0c)
+						{
+							var versupmaj = flp.b[i + 2];
+							var vermaj = flp.b[i + 3];
+							// 20
+							if (versupmaj >= 0x32 && vermaj > 0x30)
+								throw new Exception('FLP/FST is too new! Detected FL${String.fromCharCode(versupmaj)}${String.fromCharCode(vermaj)}!');
+						}
+					}
+
+					var fixyArray = unlockArray;
+					if (!untrial)
+						fixyArray = lockArray;
+
+					var flstudio11flag = false; // check
+					for (i in 0x40...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
+					{
+						if (flp.length - i < 25)
+							break;
+
+						if (flp.b[i] != 0x00 || flp.b[i + 1] == 0x00 || flp.b[i + 2] == 0x00 || flp.b[i + 3] == 0xD4 || flp.b[i + 4] == 0x34)
+							continue;
+
+						for (j in i...i + 25)
+						{
+							for (k in 0...fixyArray.length)
+							{
+								if (flp.b[j] == fixyArray[k][0])
+									flp.b[j] = fixyArray[k][1];
+							}
+						}
+						flstudio11flag = true;
+					}
+					if (flstudio11flag) // kinda Strange that there no plugins found or effects
+					{
+						// kinda ineffeicenve but whatecever!!!
+						for (i in 0x40...flp.length) // detect 00 00 00 D4 34 and set the flag to correct value
+						{
+							if (flp.length - i < 25)
+								break;
+
+							if (flp.b[i] == 0x00 || flp.b[i + 1] == 0xD4 || flp.b[i + 2] == 0x34)
+								continue;
+
+							for (j in i...i + 25)
+							{
+								for (k in 0...fixyArray.length)
+								{
+									if (flp.b[j] == fixyArray[k][0])
+										flp.b[j] = fixyArray[k][1];
+								}
+							}
+							flstudio11flag = true;
+						}
 					}
 					var newpath = path;
 					if (!overrideMode) // one liner B) nvenrembeibd
 					{
-						var suffix = (isFST ? '.fst' : '.flp');
-						newpath = '${path.split(".fst").splice(0, path.split(".fst").length - 1).join("")} - ${((untrial) ? "NON-" : "")} TRIAL MODE$suffix';
+						var temparr = path.split(".");
+						temparr[temparr.length - 2] += untrial ? " - untrialed" : " - trialed";
+						newpath = temparr.join(".");
 					}
-					@:privateAccess Main.cursor = ARROW;
+
 					File.saveBytes(newpath, flp); // save it
 					flpDone(); // display happy text :D
-					removeEvents();
 				}
-			}
-			catch (e:Exception)
-			{
-				@:privateAccess Main.cursor = ARROW;
-				flpError(e.message);
-			}
-		});
+				catch (e:Exception)
+				{
+					if (e.message.charAt(e.message.length - 1) != "!")
+						flpError('Error! ${e.message}');
+				}
+				Main.cursor = ARROW;
+			});
+		};
 	}
 
 	function flpDone()
 	{
 		FlxG.sound.play("assets/sounds/ding.wav"); // play that ding sound
-		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0xFF355B30, 0xFF8CEB7F]));
-		insert(1, bg);
-		FlxTween.tween(bg, {alpha: 0}, 1.5, {
-			ease: FlxEase.circInOut,
-			onComplete: (twn) ->
-			{
-				bg.destroy();
-			}
-		});
-		Lib.application.window.alert();
-		var text = new FlxText(0, 0, FlxG.width, "Done! Test it out to see if it works!", 12);
-		text.x -= FlxG.width;
+		Lib.application.window.alert("File done!");
+
+		var bg = new FlxSprite().loadGraphic(errorbgimg);
+		var text = new FlxText(0, 0, FlxG.width, "Done!", 12);
 		text.setFormat('assets/fonts/quicksandBold.ttf', 18, 0xFF8CEB7F, LEFT, NONE);
-		add(text);
-		FlxTween.tween(text, {x: 0}, 1, { // this needs help
-			ease: FlxEase.circOut,
-			onComplete: (_) ->
-			{
-				new FlxTimer().start(2, (_) ->
-				{
-					FlxTween.tween(text, {x: -FlxG.width}, 1, {
-						ease: FlxEase.circInOut,
-						onComplete: (_) ->
-						{
-							text.destroy();
-						}
-					});
-				});
-			}
-		});
+
+		flpCommon(bg, text);
 	}
 
 	function flpError(errorMessage:String)
 	{
 		FlxG.sound.play("assets/sounds/error.wav"); // play that ding sound
-		var bg = new FlxSprite().loadGraphic(FlxGradient.createGradientBitmapData(FlxG.width, FlxG.height, [0xFF000000, 0xFF5B3034, 0xFFEB7F7F]));
+		Lib.application.window.alert("Error!?");
+
+		var bg = new FlxSprite().loadGraphic(errorbgimg);
+		var text = new FlxText(0, 0, FlxG.width, errorMessage, 12);
+		text.setFormat('assets/fonts/quicksandBold.ttf', 18, 0xFFEB7F7F, LEFT, NONE);
+
+		flpCommon(bg, text);
+	}
+
+	function flpCommon(bg:FlxSprite, text:FlxText)
+	{
 		insert(1, bg);
 		FlxTween.tween(bg, {alpha: 0}, 1.5, {
 			ease: FlxEase.circInOut,
@@ -365,10 +315,7 @@ class PlayState extends FlxState
 				bg.destroy();
 			}
 		});
-		Lib.application.window.alert();
-		var text = new FlxText(0, 0, FlxG.width, 'Something went wrong :( Error message: $errorMessage', 12);
 		text.x -= FlxG.width;
-		text.setFormat('assets/fonts/quicksandBold.ttf', 18, 0xFFEB7F7F, LEFT, NONE);
 		add(text);
 		FlxTween.tween(text, {x: 0}, 1, { // this needs help
 			ease: FlxEase.circOut,
@@ -393,15 +340,5 @@ class PlayState extends FlxState
 		FlxG.save.data.overwrite = value;
 		FlxG.save.flush();
 		return overwriteFlp = value;
-	}
-
-	function set_fstMode(value:Bool)
-	{
-		var mode = (value ? "FST" : "FLP");
-		FlxG.save.data.fst = value;
-		FlxG.save.flush();
-		untrialButton.text = '$untrialPrefix $mode';
-		trialButton.text = '$trialPrefix $mode';
-		return fstMode = value;
 	}
 }
