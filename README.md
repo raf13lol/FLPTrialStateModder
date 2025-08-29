@@ -1,4 +1,4 @@
-# NOTE: doesn't work for FL 21 and higher
+# NOTE: doesn't work for untrialising the FLP in specific (plugins can still be done) on FL 21 and higher
 # they added stuff so it's not that easy
 
 # how it works
